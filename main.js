@@ -1,16 +1,50 @@
-// Add imports here
+const BIP39 = require("bip39");
+const hdkey = require("ethereumjs-wallet/hdkey");
+const Wallet = require('ethereumjs-wallet');
+const keccak256 = require('js-sha3').keccak256;
+const EthereumTx = require('ethereumjs-tx')
+
+// Generate a random mnemonic (uses crypto.randomBytes under the hood), defaults to 128-bits of entropy
+function generateMnemonic(){
+    return BIP39.generateMnemonic()
+}
+
+var isValid = BIP39.validateMnemonic("Enter your mnemonic here")
+// This will return false because "Enter your mneomnic here" is not a valid phrase
 
 
+function generateSeed(mnemonic){
+    return BIP39.mnemonicToSeed(mnemonic)
+}
 
-// Add functions here
+function generatePrivKey(mnemonic){
+    const seed = generateSeed(mnemonic)
+    return hdkey.fromMasterSeed(seed).derivePath(`m/44'/60'/0'/0/0`).getWallet().getPrivateKey()
+}
 
+function derivePubKey(privKey){
+    const wallet = Wallet.fromPrivateKey(privKey)    
+    return wallet.getPublicKey()
+}
 
+// Generating the private key and public key is the same for both Bitcoin and Ethereum as both use secp256k1 elliptic curve cryptography. 
+// Deriving an account address from the public key differs slightly.
 
-/*
+function deriveEthAddress(pubKey){
+    const address = keccak256(pubKey) // keccak256 hash of  publicKey
+    // Get the last 20 bytes of the public key
+    return "0x" + address.substring(address.length - 40, address.length)    
+}
 
-Do not edit code below this line.
+function signTx(privKey, txData){
+    const tx = new EthereumTx(txData)
+    tx.sign(privKey)
+    return tx
+}
 
-*/
+function getSignerAddress(signedTx){
+    return "0x" + signedTx.getSenderAddress().toString('hex')
+}
 
 var mnemonicVue = new Vue({
     el:"#app",
